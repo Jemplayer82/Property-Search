@@ -1,0 +1,22 @@
+{
+  "location": "Austin, TX",
+  "site": "realtor.com",
+  "filters": {
+    "min_price": 200000,
+    "max_price": 500000,
+    "min_beds": 3,
+    "min_baths": 2,
+    "property_types": ["house", "condo", "townhouse", "multi-family"],
+    "max_hoa_per_month": null,
+    "min_sqft": null,
+    "max_sqft": null,
+    "max_days_on_market": null,
+    "status": ["for sale"]
+  },
+  "output": {
+    "results_dir": "results",
+    "seen_listings_file": "seen_listings.json",
+    "csv_filename": "listings.csv",
+    "print_new_only": true
+  }
+}

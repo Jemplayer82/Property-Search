@@ -1,0 +1,5 @@
+results/listings.csv
+results/seen_listings.json
+__pycache__/
+*.pyc
+.env
