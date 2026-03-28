@@ -1,6 +1,6 @@
 """
 MLS Listing Search — powered by HomeHarvest (Redfin / Zillow / Realtor.com)
-Run manually or schedule with Windows Task Scheduler.
+Run manually or via the web app.
 """
 
 import json
@@ -15,8 +15,6 @@ except ImportError:
     print("Missing dependency. Run: pip install homeharvest")
     sys.exit(1)
 
-# ── Config ────────────────────────────────────────────────────────────────────
-
 SCRIPT_DIR = Path(__file__).parent
 CONFIG_FILE = SCRIPT_DIR / "config.json"
 
@@ -27,8 +25,6 @@ LISTING_TYPE_MAP = {
 }
 
 
-# ── Fetch ─────────────────────────────────────────────────────────────────────
-
 def fetch_listings(config: dict) -> list[dict]:
     filters  = config["filters"]
     location = config["location"]
@@ -36,7 +32,6 @@ def fetch_listings(config: dict) -> list[dict]:
     listing_type = LISTING_TYPE_MAP.get(status_list[0], "for_sale")
 
     prop_types = filters.get("property_types", [])
-    # homeharvest accepts: single_family, multi_family, condos, townhomes, land, mobile
     hh_type_map = {
         "house":        "single_family",
         "multi-family": "multi_family",
@@ -50,7 +45,6 @@ def fetch_listings(config: dict) -> list[dict]:
     kwargs = {
         "location":     location,
         "listing_type": listing_type,
-        "limit":        200,
     }
     if filters.get("min_price"):
         kwargs["price_min"] = filters["min_price"]
@@ -64,6 +58,8 @@ def fetch_listings(config: dict) -> list[dict]:
         kwargs["sqft_min"] = filters["min_sqft"]
     if filters.get("max_sqft"):
         kwargs["sqft_max"] = filters["max_sqft"]
+    if filters.get("distance"):
+        kwargs["radius"] = float(filters["distance"])
     if hh_types:
         kwargs["property_type"] = hh_types
 
@@ -77,30 +73,60 @@ def fetch_listings(config: dict) -> list[dict]:
     if df is None or df.empty:
         return []
 
+    import pandas as pd
+
+    def safe(v, fallback=""):
+        try:
+            v_str = str(v)
+            if v_str.lower() in ("nan", "none", "<na>", ""):
+                return fallback
+            if pd.isna(v):
+                return fallback
+        except Exception:
+            pass
+        return v
+
     listings = []
     for _, row in df.iterrows():
-        mls_id = str(row.get("mls_id", "") or row.get("property_url", ""))
+        mls_id_val = safe(row.get("mls_id"), "")
+        url_val = safe(row.get("property_url"), "")
+        mls_id = str(mls_id_val or url_val)
         listings.append({
-            "id":            mls_id,
-            "address":       str(row.get("street", "") or ""),
-            "city":          str(row.get("city", "") or ""),
-            "state":         str(row.get("state", "") or ""),
-            "zip":           str(row.get("zip_code", "") or ""),
-            "price":         row.get("list_price", ""),
-            "beds":          row.get("beds", ""),
-            "baths":         row.get("full_baths", ""),
-            "sqft":          row.get("sqft", ""),
-            "property_type": str(row.get("style", "") or ""),
-            "year_built":    row.get("year_built", ""),
-            "days_on_market": row.get("days_on_market", ""),
-            "url":           str(row.get("property_url", "") or ""),
-            "fetched_at":    datetime.now().isoformat(timespec="seconds"),
+            "id":             mls_id,
+            "address":        str(safe(row.get("street"), "")),
+            "city":           str(safe(row.get("city"), "")),
+            "state":          str(safe(row.get("state"), "")),
+            "zip":            str(safe(row.get("zip_code"), "")),
+            "price":          safe(row.get("list_price")),
+            "beds":           safe(row.get("beds")),
+            "baths":          safe(row.get("full_baths")),
+            "sqft":           safe(row.get("sqft")),
+            "property_type":  str(safe(row.get("style"), "")),
+            "year_built":     safe(row.get("year_built")),
+            "days_on_market": safe(row.get("days_on_mls")),
+            "list_date":      str(safe(row.get("list_date"), "")),
+            "url":            str(safe(row.get("property_url"), "")),
+            "photo":          safe(row.get("primary_photo"), ""),
+            "latitude":       safe(row.get("latitude")),
+            "longitude":      safe(row.get("longitude")),
+            "fetched_at":     datetime.now().isoformat(timespec="seconds"),
         })
 
-    return [l for l in listings if l["id"]]
+    results = [l for l in listings if l["id"]]
 
+    current_year = datetime.now().year
+    max_age = filters.get("max_age")  # homes no older than X years
+    min_age = filters.get("min_age")  # homes at least X years old
 
-# ── Persistence ───────────────────────────────────────────────────────────────
+    if max_age:
+        min_built = current_year - int(max_age)
+        results = [l for l in results if l["year_built"] and str(l["year_built"]).isdigit() and int(l["year_built"]) >= min_built]
+    if min_age:
+        max_built = current_year - int(min_age)
+        results = [l for l in results if l["year_built"] and str(l["year_built"]).isdigit() and int(l["year_built"]) <= max_built]
+
+    return results
+
 
 def load_seen(path: Path) -> set:
     if path.exists():
@@ -125,8 +151,6 @@ def append_to_csv(path: Path, listings: list[dict]):
         writer.writerows(listings)
 
 
-# ── Display ───────────────────────────────────────────────────────────────────
-
 def fmt_price(val) -> str:
     try:
         return f"${int(float(str(val).replace(',', ''))):,}"
@@ -134,62 +158,35 @@ def fmt_price(val) -> str:
         return str(val)
 
 
-def print_listing(listing: dict, label: str = "NEW"):
-    print(f"\n  [{label}] {listing['address']}, {listing['city']}, {listing['state']} {listing['zip']}")
-    print(f"        Price: {fmt_price(listing['price'])}  |  Beds: {listing['beds']}  |  Baths: {listing['baths']}  |  Sqft: {listing['sqft']}")
-    print(f"        Type: {listing['property_type']}  |  Days on market: {listing['days_on_market']}")
-    if listing["url"]:
-        print(f"        {listing['url']}")
-
-
-# ── Main ──────────────────────────────────────────────────────────────────────
-
 def main():
     with open(CONFIG_FILE) as f:
         config = json.load(f)
 
-    out_cfg        = config["output"]
-    results_dir    = SCRIPT_DIR / out_cfg["results_dir"]
-    seen_file      = results_dir / out_cfg["seen_listings_file"]
-    csv_file       = results_dir / out_cfg["csv_filename"]
-    print_new_only = out_cfg.get("print_new_only", True)
-    filters        = config["filters"]
+    out_cfg     = config["output"]
+    results_dir = SCRIPT_DIR / out_cfg["results_dir"]
+    seen_file   = results_dir / out_cfg["seen_listings_file"]
+    csv_file    = results_dir / out_cfg["csv_filename"]
+    filters     = config["filters"]
     results_dir.mkdir(exist_ok=True)
 
     print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Searching: {config['location']}")
-    print(f"  Filters: price ${filters.get('min_price', 0):,} to ${filters.get('max_price', 0):,}  |  "
-          f"beds >= {filters.get('min_beds', 'any')}  |  baths >= {filters.get('min_baths', 'any')}")
-
     try:
         listings = fetch_listings(config)
     except Exception as e:
-        print(f"  ERROR fetching listings: {e}")
+        print(f"  ERROR: {e}")
         sys.exit(1)
 
-    print(f"  Fetched {len(listings)} listing(s)")
-
-    seen         = load_seen(seen_file)
+    seen = load_seen(seen_file)
     new_listings = [l for l in listings if l["id"] not in seen]
-    print(f"  New since last run: {len(new_listings)}")
+    print(f"  Fetched {len(listings)} · New: {len(new_listings)}")
 
     if new_listings:
         append_to_csv(csv_file, new_listings)
         for l in new_listings:
             seen.add(l["id"])
         save_seen(seen_file, seen)
-        print(f"  Saved to: {csv_file}")
 
-    to_print = new_listings if print_new_only else listings
-    if not to_print:
-        print("  No new listings to display.")
-    else:
-        print(f"\n{'-'*70}")
-        for listing in to_print:
-            label = "NEW" if listing in new_listings else "   "
-            print_listing(listing, label)
-        print(f"{'-'*70}")
-
-    print(f"\nDone. Total listings tracked: {len(seen)}")
+    print(f"Done. Total tracked: {len(seen)}")
 
 
 if __name__ == "__main__":

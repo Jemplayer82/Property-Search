@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-7">
+    <div class="card shadow-sm">
+      <div class="card-header bg-dark text-white fw-semibold">
+        <i class="bi bi-person me-2"></i>{{ title }}
+      </div>
+      <div class="card-body">
+        <form method="POST">
+
+          <h6 class="text-muted mb-3">Client Info</h6>
+          <div class="row g-3 mb-3">
+            <div class="col-6">
+              <label class="form-label">First Name</label>
+              <input type="text" class="form-control" name="first_name" value="{{ client.first_name if client else '' }}" required>
+            </div>
+            <div class="col-6">
+              <label class="form-label">Last Name</label>
+              <input type="text" class="form-control" name="last_name" value="{{ client.last_name if client else '' }}" required>
+            </div>
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label">Email Address</label>
+            <input type="email" class="form-control" name="email" value="{{ client.email if client else '' }}" required placeholder="client@example.com">
+            <div class="form-text">New listings will be emailed to this address.</div>
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label">Email Frequency</label>
+            {% set cur_freq = client.email_frequency if client else 'every_new_listing' %}
+            <select class="form-select" name="email_frequency">
+              <option value="every_new_listing" {% if cur_freq == 'every_new_listing' %}selected{% endif %}>Every time a new listing is found (checked hourly)</option>
+              <option value="once_daily"        {% if cur_freq == 'once_daily'        %}selected{% endif %}>Once a day</option>
+              <option value="once_weekly"       {% if cur_freq == 'once_weekly'       %}selected{% endif %}>Once a week</option>
+            </select>
+          </div>
+
+          <hr class="my-4">
+          <h6 class="text-muted mb-3">Search Filters</h6>
+
+          <div class="row g-3 mb-3">
+            <div class="col-8">
+              <label class="form-label">Location</label>
+              <input type="text" class="form-control" name="location" value="{{ client.filters.location if client else '' }}" placeholder="City, State or ZIP" required>
+              <div class="form-text">Use a ZIP code with the distance filter to avoid city boundary limits.</div>
+            </div>
+            <div class="col-4">
+              <label class="form-label">Distance (miles)</label>
+              <input type="number" class="form-control" name="distance" value="{{ client.filters.distance if client and client.filters.distance else 0 }}" placeholder="0 to ignore" min="0" step="0.1">
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Status</label>
+            <select class="form-select" name="status">
+              {% set cur_status = client.filters.status if client else 'for sale' %}
+              <option value="for sale" {% if cur_status == 'for sale' %}selected{% endif %}>For Sale</option>
+              <option value="sold"     {% if cur_status == 'sold'     %}selected{% endif %}>Sold</option>
+              <option value="pending"  {% if cur_status == 'pending'  %}selected{% endif %}>Pending</option>
+            </select>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-6">
+              <label class="form-label">Min Price</label>
+              <input type="number" class="form-control" name="min_price" value="{{ client.filters.min_price if client else 0 }}" step="10000" min="0">
+            </div>
+            <div class="col-6">
+              <label class="form-label">Max Price</label>
+              <input type="number" class="form-control" name="max_price" value="{{ client.filters.max_price if client else 0 }}" step="10000" min="0">
+            </div>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-6">
+              <label class="form-label">Min Beds</label>
+              <select class="form-select" name="min_beds">
+                {% for i in range(6) %}
+                <option value="{{ i }}" {% if client and client.filters.min_beds == i %}selected{% endif %}>{{ i }}+</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-6">
+              <label class="form-label">Min Baths</label>
+              <select class="form-select" name="min_baths">
+                {% for i in range(5) %}
+                <option value="{{ i }}" {% if client and client.filters.min_baths == i %}selected{% endif %}>{{ i }}+</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-6">
+              <label class="form-label">Min Sqft</label>
+              <input type="number" class="form-control" name="min_sqft" value="{{ client.filters.min_sqft if client and client.filters.min_sqft else '' }}" placeholder="e.g. 1000" min="0" step="100">
+            </div>
+            <div class="col-6">
+              <label class="form-label">Max Sqft</label>
+              <input type="number" class="form-control" name="max_sqft" value="{{ client.filters.max_sqft if client and client.filters.max_sqft else '' }}" placeholder="e.g. 3000" min="0" step="100">
+            </div>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-6">
+              <label class="form-label">Max Age (yrs)</label>
+              <input type="number" class="form-control" name="max_age" value="{{ client.filters.max_age if client and client.filters.max_age else '' }}" placeholder="e.g. 5" min="0">
+              <div class="form-text">Newer than X years old</div>
+            </div>
+            <div class="col-6">
+              <label class="form-label">Min Age (yrs)</label>
+              <input type="number" class="form-control" name="min_age" value="{{ client.filters.min_age if client and client.filters.min_age else '' }}" placeholder="e.g. 50" min="0">
+              <div class="form-text">Older than X years old</div>
+            </div>
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label">Property Type</label>
+            {% set cur_types = client.filters.property_types if client else [] %}
+            {% for val, label in [('house','House'),('condo','Condo'),('townhouse','Townhouse'),('multi-family','Multi-Family')] %}
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" name="property_types" value="{{ val }}" id="t_{{ val }}"
+                {% if val in cur_types %}checked{% endif %}>
+              <label class="form-check-label" for="t_{{ val }}">{{ label }}</label>
+            </div>
+            {% endfor %}
+          </div>
+
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-save me-2"></i>{{ 'Save Changes' if client else 'Create Client' }}
+            </button>
+            <a href="/clients" class="btn btn-outline-secondary">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

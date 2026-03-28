@@ -1,17 +1,27 @@
 {
-  "location": "Austin, TX",
+  "location": "3524 winding shore ln pfluerville tx 78660",
   "site": "realtor.com",
   "filters": {
-    "min_price": 200000,
-    "max_price": 500000,
-    "min_beds": 3,
-    "min_baths": 2,
-    "property_types": ["house", "condo", "townhouse", "multi-family"],
+    "min_price": 0,
+    "max_price": 0,
+    "min_beds": 0,
+    "min_baths": 0,
+    "property_types": [
+      "house",
+      "condo",
+      "townhouse",
+      "multi-family"
+    ],
     "max_hoa_per_month": null,
     "min_sqft": null,
     "max_sqft": null,
     "max_days_on_market": null,
-    "status": ["for sale"]
+    "status": [
+      "for sale"
+    ],
+    "max_age": null,
+    "min_age": null,
+    "distance": 0.5
   },
   "output": {
     "results_dir": "results",
