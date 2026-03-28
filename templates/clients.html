@@ -49,6 +49,7 @@ function fmtPrice(v) {
 function fmtFreq(f) {
   if (f === 'once_daily')  return 'Once a day';
   if (f === 'once_weekly') return 'Once a week';
+  if (f === 'never')       return 'Never';
   return 'Every new listing';
 }
 

@@ -668,6 +668,8 @@ def scheduled_searches():
     now = datetime.now()
     for client in clients:
         freq = client.get("email_frequency", "every_new_listing")
+        if freq == "never":
+            continue
         last = client.get("last_emailed")
 
         if last:
