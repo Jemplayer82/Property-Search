@@ -1,0 +1,29 @@
+{
+  "location": "Dripping Springs, TX",
+  "site": "realtor.com",
+  "filters": {
+    "min_price": 500000,
+    "max_price": 700000,
+    "min_beds": 4,
+    "min_baths": 0,
+    "property_types": [
+      "house"
+    ],
+    "max_hoa_per_month": null,
+    "min_sqft": null,
+    "max_sqft": null,
+    "max_days_on_market": null,
+    "status": [
+      "for sale"
+    ],
+    "max_age": null,
+    "min_age": null,
+    "distance": 10.0
+  },
+  "output": {
+    "results_dir": "results",
+    "seen_listings_file": "seen_listings.json",
+    "csv_filename": "listings.csv",
+    "print_new_only": true
+  }
+}

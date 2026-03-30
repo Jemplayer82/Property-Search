@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-6">
+    <div class="card shadow-sm">
+      <div class="card-header bg-dark text-white fw-semibold">
+        <i class="bi bi-envelope me-2"></i>Email Notifications
+      </div>
+      <div class="card-body">
+        <form method="POST">
+          <div class="form-check form-switch mb-4">
+            <input class="form-check-input" type="checkbox" name="enabled" id="enabled" {% if notify.enabled %}checked{% endif %}>
+            <label class="form-check-label fw-semibold" for="enabled">
+              Notify me when new listings are found
+            </label>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Send notifications to</label>
+            <input type="email" class="form-control" name="email" value="{{ notify.email }}" placeholder="you@example.com">
+          </div>
+
+          <hr class="my-4">
+          <h6 class="text-muted mb-1">SMTP Configuration</h6>
+          <p class="text-muted small mb-3">
+            For Gmail: use <code>smtp.gmail.com</code> port <code>587</code> and an
+            <a href="https://myaccount.google.com/apppasswords" target="_blank">App Password</a>.
+          </p>
+
+          <div class="row g-3 mb-3">
+            <div class="col-8">
+              <label class="form-label">SMTP Host</label>
+              <input type="text" class="form-control" name="smtp_host" value="{{ notify.smtp_host }}">
+            </div>
+            <div class="col-4">
+              <label class="form-label">Port</label>
+              <input type="number" class="form-control" name="smtp_port" value="{{ notify.smtp_port }}">
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">SMTP Username (sender email)</label>
+            <input type="email" class="form-control" name="smtp_user" value="{{ notify.smtp_user }}">
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label">SMTP Password / App Password</label>
+            <input type="password" class="form-control" name="smtp_pass" value="{{ notify.smtp_pass }}">
+          </div>
+
+          <button type="submit" class="btn btn-primary">
+            <i class="bi bi-save me-2"></i>Save Settings
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

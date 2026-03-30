@@ -1,0 +1,52 @@
+[
+  {
+    "id": "8c5c0b89-6cd5-433b-a1fc-a740248568fb",
+    "first_name": "Landon",
+    "last_name": "Ferguson",
+    "email": "landon@txferguson.net",
+    "email_frequency": "once_weekly",
+    "last_emailed": "2026-03-28T09:23:31",
+    "filters": {
+      "location": "3524 winding shore ln",
+      "distance": 0.0,
+      "min_price": 250000,
+      "max_price": 500000,
+      "min_beds": 0,
+      "min_baths": 0,
+      "property_types": [
+        "house"
+      ],
+      "status": "for sale",
+      "min_sqft": 3000,
+      "max_sqft": null,
+      "max_age": 10,
+      "min_age": null
+    },
+    "created_at": "2026-03-26T17:40:44"
+  },
+  {
+    "id": "da4a06e5-7876-49ed-aa04-7319cc9c0837",
+    "first_name": "Test",
+    "last_name": "Bundy",
+    "email": "landon@txferguson.net",
+    "email_frequency": "every_new_listing",
+    "last_emailed": null,
+    "filters": {
+      "location": "Dripping Springs, TX",
+      "distance": 10.0,
+      "min_price": 500000,
+      "max_price": 700000,
+      "min_beds": 4,
+      "min_baths": 0,
+      "property_types": [
+        "house"
+      ],
+      "status": "for sale",
+      "min_sqft": 3000,
+      "max_sqft": null,
+      "max_age": null,
+      "min_age": null
+    },
+    "created_at": "2026-03-28T09:53:33"
+  }
+]

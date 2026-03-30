@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+  #map { height: calc(100vh - 130px); border-radius: 10px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h5 class="mb-0"><i class="bi bi-map me-2"></i>Listing Map</h5>
+  <span id="mapStatus" class="text-muted small">Loading listings…</span>
+</div>
+<div id="map"></div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const map = L.map('map').setView([39.5, -98.35], 4);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a> contributors'
+}).addTo(map);
+
+function fmtPrice(v) {
+  const n = parseInt(v);
+  return isNaN(n) ? (v || '—') : '$' + n.toLocaleString();
+}
+
+(async () => {
+  try {
+    let listings = [];
+    let isSearchResults = false;
+
+    // Check URL parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const forceSearchResults = urlParams.get('results') === 'search';
+
+    // Check if we have search results in localStorage
+    const searchData = localStorage.getItem('searchResults');
+    console.log('URL param results=search?', forceSearchResults);
+    console.log('localStorage.searchResults exists?', !!searchData);
+
+    if (forceSearchResults && searchData) {
+      try {
+        const parsed = JSON.parse(searchData);
+        listings = parsed.listings || [];
+        isSearchResults = true;
+        console.log(`✓ USING SEARCH RESULTS: ${listings.length} listings from localStorage`);
+        if (listings.length > 0) {
+          console.log('Sample listing coordinates:', {
+            address: listings[0].address,
+            latitude: listings[0].latitude,
+            longitude: listings[0].longitude
+          });
+        }
+      } catch (e) {
+        console.error('Error parsing search results:', e);
+      }
+    }
+
+    // If no search results loaded yet, try loading from API as fallback
+    if (!listings.length) {
+      console.log('Loading all listings from API...');
+      const res = await fetch('/api/listings');
+      listings = await res.json();
+      console.log(`Loaded ${listings.length} listings from API (NOT search results)`);
+    } else {
+      console.log(`SUCCESS: Showing ${listings.length} search results only`);
+    }
+
+    const markers = [];
+    const markersWithCoords = [];
+
+    listings.forEach((l, idx) => {
+      // Try multiple coordinate field names
+      let lat = parseFloat(l.lat || l.latitude);
+      let lng = parseFloat(l.lng || l.longitude);
+
+      if (isNaN(lat) || isNaN(lng)) {
+        if (idx === 0) console.warn(`First listing has no valid coordinates: lat=${l.latitude}, lng=${l.longitude}`);
+        return;
+      }
+
+      // Create marker with distinct styling for search results
+      const markerColor = isSearchResults ? '#2563eb' : '#666666';
+      const m = L.marker([lat, lng], {
+        opacity: isSearchResults ? 1.0 : 0.7
+      }).addTo(map);
+
+      // Add popup with listing details
+      const photoHTML = (l.photo && l.photo !== 'None' && l.photo !== '')
+        ? `<img src="${l.photo}" referrerpolicy="no-referrer" onerror="this.style.display='none'" style="width:100%;height:160px;object-fit:cover;border-radius:4px;margin-bottom:8px;display:block">`
+        : '';
+      const popupHTML = `
+        <div style="width:280px">
+          ${photoHTML}
+          <b>${l.address || '—'}</b><br>
+          ${l.city || '—'}, ${l.state || '—'} ${l.zip || '—'}<br>
+          <b style="color:#2563eb">${fmtPrice(l.price || '—')}</b><br>
+          <small>
+            ${l.beds || '—'} bed &middot; ${l.baths || '—'} bath &middot; ${l.sqft || '—'} sqft<br>
+            ${l.property_type || ''} · ${l.days_on_market || '—'} days
+          </small><br>
+          ${l.url ? `<a href="${l.url}" target="_blank" class="btn btn-sm btn-primary mt-2">View Listing →</a>` : ''}
+        </div>
+      `;
+      m.bindPopup(popupHTML);
+
+      markers.push(m);
+      markersWithCoords.push({lat: lat, lng: lng});
+    });
+
+    // Update status
+    const statusMsg = isSearchResults
+      ? `${markers.length} search result(s) on map`
+      : `${markers.length} of ${listings.length} listing(s) mapped`;
+    document.getElementById('mapStatus').textContent = statusMsg;
+
+    // Zoom to fit markers with padding
+    if (markersWithCoords.length > 0) {
+      const group = L.featureGroup(markers);
+      const bounds = group.getBounds();
+
+      // Add padding and fit
+      map.fitBounds(bounds, {
+        padding: [50, 50],
+        maxZoom: 15
+      });
+
+      console.log(`Map zoomed to fit ${markers.length} markers`);
+    } else {
+      document.getElementById('mapStatus').textContent = 'No listings with coordinates to display';
+    }
+
+  } catch(e) {
+    console.error('Error loading listings:', e);
+    document.getElementById('mapStatus').textContent = 'Error loading listings: ' + e.message;
+  }
+})();
+</script>
+{% endblock %}
