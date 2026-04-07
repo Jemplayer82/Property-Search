@@ -1,0 +1,11 @@
+services:
+  property-search:
+    build: .
+    ports:
+      - "5050:5050"
+    restart: unless-stopped
+    volumes:
+      - ./results:/app/results
+      - ./config.json:/app/config.json
+      - ./clients.json:/app/clients.json
+      - ./notifications.json:/app/notifications.json

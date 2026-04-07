@@ -1,0 +1,9 @@
+.git
+.claude
+__pycache__
+*.pyc
+*.pyo
+results/
+*.log
+app.pid
+restart.sh
