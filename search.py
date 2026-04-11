@@ -42,9 +42,11 @@ def fetch_listings(config: dict) -> list[dict]:
     }
     hh_types = list({hh_type_map[p] for p in prop_types if p in hh_type_map}) or None
 
+    site = config.get("site", "realtor.com")
     kwargs = {
         "location":     location,
         "listing_type": listing_type,
+        "site_name":    [site],
     }
     if filters.get("min_price"):
         kwargs["price_min"] = filters["min_price"]
