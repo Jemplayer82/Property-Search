@@ -1,6 +1,6 @@
 Flask==2.3.3
 APScheduler==3.10.4
-homeharvest==0.3.3
+homeharvest
 pandas==2.0.3
 werkzeug==2.3.7
 gunicorn==21.2.0
