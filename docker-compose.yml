@@ -7,7 +7,7 @@ services:
     env_file:
       - stack.env
     volumes:
-      - ./results:/app/results
-      - ./config.json:/app/config.json
-      - ./clients.json:/app/clients.json
-      - ./notifications.json:/app/notifications.json
+      - results:/app/results
+
+volumes:
+  results:
