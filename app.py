@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, jsonify, redirect, url_for, flash
 import json
+import os
 import csv
 import uuid
 import time
@@ -24,7 +25,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
-app.secret_key = "ps-2024-secret"
+app.secret_key = os.environ.get("SECRET_KEY", "ps-2024-secret")
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
 BASE          = Path(__file__).parent

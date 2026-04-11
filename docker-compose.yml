@@ -4,6 +4,8 @@ services:
     ports:
       - "5050:5050"
     restart: unless-stopped
+    env_file:
+      - .env
     volumes:
       - ./results:/app/results
       - ./config.json:/app/config.json
