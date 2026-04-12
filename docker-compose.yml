@@ -1,6 +1,7 @@
 services:
   property-search:
     image: ghcr.io/jemplayer82/property-search:latest
+    pull_policy: always
     ports:
       - "5050:5050"
     restart: unless-stopped
