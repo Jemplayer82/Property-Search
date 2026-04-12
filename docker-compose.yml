@@ -1,6 +1,6 @@
 services:
   property-search:
-    build: .
+    image: ghcr.io/jemplayer82/property-search:latest
     ports:
       - "5050:5050"
     restart: unless-stopped
