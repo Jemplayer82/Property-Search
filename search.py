@@ -26,101 +26,93 @@ LISTING_TYPE_MAP = {
 
 
 def fetch_listings(config: dict) -> list[dict]:
-    filters      = config["filters"]
-    location     = config["location"]
-    site         = config.get("site", "realtor.com")
-    status_list  = filters.get("status", ["for sale"])
+    filters  = config["filters"]
+    location = config["location"]
+    status_list = filters.get("status", ["for sale"])
     listing_type = LISTING_TYPE_MAP.get(status_list[0], "for_sale")
 
+    prop_types = filters.get("property_types", [])
+    hh_type_map = {
+        "house":        "single_family",
+        "multi-family": "multi_family",
+        "condo":        "condos",
+        "townhouse":    "townhomes",
+        "land":         "land",
+        "mobile":       "mobile",
+    }
+    hh_types = list({hh_type_map[p] for p in prop_types if p in hh_type_map}) or None
+
+    kwargs = {
+        "location":     location,
+        "listing_type": listing_type,
+    }
+    if filters.get("min_price"):
+        kwargs["price_min"] = filters["min_price"]
+    if filters.get("max_price"):
+        kwargs["price_max"] = filters["max_price"]
+    if filters.get("min_beds"):
+        kwargs["beds_min"] = filters["min_beds"]
+    if filters.get("min_baths"):
+        kwargs["baths_min"] = filters["min_baths"]
+    if filters.get("min_sqft"):
+        kwargs["sqft_min"] = filters["min_sqft"]
+    if filters.get("max_sqft"):
+        kwargs["sqft_max"] = filters["max_sqft"]
+    if filters.get("distance"):
+        kwargs["radius"] = float(filters["distance"])
+    if hh_types:
+        kwargs["property_type"] = hh_types
+
     try:
-        results = scrape_property(
-            location=location,
-            site_name=site,
-            listing_type=listing_type,
-        )
+        df = scrape_property(**kwargs)
     except Exception as e:
         if "no results" in str(e).lower():
             return []
         raise
 
-    if not results:
+    if df is None or df.empty:
         return []
 
-    listings = []
-    for prop in results:
-        # Skip Building objects (multi-unit — no individual price/bed/bath)
-        if not hasattr(prop, "price"):
-            continue
+    import pandas as pd
 
-        addr = prop.address
-        mls_id = getattr(prop, "mls_id", None) or prop.url
+    def safe(v, fallback=""):
+        try:
+            v_str = str(v)
+            if v_str.lower() in ("nan", "none", "<na>", ""):
+                return fallback
+            if pd.isna(v):
+                return fallback
+        except Exception:
+            pass
+        return v
+
+    listings = []
+    for _, row in df.iterrows():
+        mls_id_val = safe(row.get("mls_id"), "")
+        url_val = safe(row.get("property_url"), "")
+        mls_id = str(mls_id_val or url_val)
         listings.append({
-            "id":             str(mls_id),
-            "address":        getattr(addr, "address_one", "") or "",
-            "city":           getattr(addr, "city", "") or "",
-            "state":          getattr(addr, "state", "") or "",
-            "zip":            getattr(addr, "zip_code", "") or "",
-            "price":          getattr(prop, "price", None),
-            "beds":           getattr(prop, "beds", None),
-            "baths":          getattr(prop, "baths", None),
-            "sqft":           getattr(prop, "square_feet", None),
-            "property_type":  str(getattr(prop, "listing_type", "") or ""),
-            "year_built":     getattr(prop, "year_built", None),
-            "days_on_market": None,
-            "list_date":      "",
-            "url":            getattr(prop, "url", "") or "",
-            "photo":          "",
-            "latitude":       None,
-            "longitude":      None,
+            "id":             mls_id,
+            "address":        str(safe(row.get("street"), "")),
+            "city":           str(safe(row.get("city"), "")),
+            "state":          str(safe(row.get("state"), "")),
+            "zip":            str(safe(row.get("zip_code"), "")),
+            "price":          safe(row.get("list_price")),
+            "beds":           safe(row.get("beds")),
+            "baths":          safe(row.get("full_baths")),
+            "sqft":           safe(row.get("sqft")),
+            "property_type":  str(safe(row.get("style"), "")),
+            "year_built":     safe(row.get("year_built")),
+            "days_on_market": safe(row.get("days_on_mls")),
+            "list_date":      str(safe(row.get("list_date"), "")),
+            "url":            str(safe(row.get("property_url"), "")),
+            "photo":          safe(row.get("primary_photo"), ""),
+            "latitude":       safe(row.get("latitude")),
+            "longitude":      safe(row.get("longitude")),
             "fetched_at":     datetime.now().isoformat(timespec="seconds"),
         })
 
-    # Apply filters manually
-    min_price = filters.get("min_price") or 0
-    max_price = filters.get("max_price") or 0
-    min_beds  = filters.get("min_beds") or 0
-    min_baths = filters.get("min_baths") or 0
-    min_sqft  = filters.get("min_sqft")
-    max_sqft  = filters.get("max_sqft")
-
-    def passes(l):
-        price = l["price"]
-        if price is not None:
-            try:
-                p = float(price)
-                if min_price and p < min_price:
-                    return False
-                if max_price and p > max_price:
-                    return False
-            except (ValueError, TypeError):
-                pass
-        if min_beds and l["beds"] is not None:
-            try:
-                if float(l["beds"]) < min_beds:
-                    return False
-            except (ValueError, TypeError):
-                pass
-        if min_baths and l["baths"] is not None:
-            try:
-                if float(l["baths"]) < min_baths:
-                    return False
-            except (ValueError, TypeError):
-                pass
-        if min_sqft and l["sqft"] is not None:
-            try:
-                if float(l["sqft"]) < min_sqft:
-                    return False
-            except (ValueError, TypeError):
-                pass
-        if max_sqft and l["sqft"] is not None:
-            try:
-                if float(l["sqft"]) > max_sqft:
-                    return False
-            except (ValueError, TypeError):
-                pass
-        return True
-
-    results_filtered = [l for l in listings if l["id"] and passes(l)]
+    results = [l for l in listings if l["id"]]
 
     current_year = datetime.now().year
     max_age = filters.get("max_age")
@@ -128,12 +120,12 @@ def fetch_listings(config: dict) -> list[dict]:
 
     if max_age:
         min_built = current_year - int(max_age)
-        results_filtered = [l for l in results_filtered if l["year_built"] and str(l["year_built"]).isdigit() and int(l["year_built"]) >= min_built]
+        results = [l for l in results if l["year_built"] and str(l["year_built"]).isdigit() and int(l["year_built"]) >= min_built]
     if min_age:
         max_built = current_year - int(min_age)
-        results_filtered = [l for l in results_filtered if l["year_built"] and str(l["year_built"]).isdigit() and int(l["year_built"]) <= max_built]
+        results = [l for l in results if l["year_built"] and str(l["year_built"]).isdigit() and int(l["year_built"]) <= max_built]
 
-    return results_filtered
+    return results
 
 
 def load_seen(path: Path) -> set:
