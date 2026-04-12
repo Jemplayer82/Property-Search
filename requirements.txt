@@ -1,7 +1,7 @@
-Flask==2.3.3
-APScheduler==3.10.4
+flask
+apscheduler
 homeharvest==0.8.18
-pandas>=2.3.1
-werkzeug==2.3.7
-gunicorn==21.2.0
-requests==2.31.0
+pandas
+werkzeug
+gunicorn
+requests
