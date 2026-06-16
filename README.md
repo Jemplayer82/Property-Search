@@ -1,8 +1,12 @@
-# Property Search
+<img src="assets/fathom-header-banner.svg" alt="Fathom Works — property-search" width="100%">
 
-A self-hosted MLS listing search tool with a web dashboard. Automatically discovers new real estate listings from Redfin, Zillow, and Realtor.com, filters them by your criteria, and tracks them over time. Supports multiple clients, scheduled searches, email notifications, and an interactive map view.
+# `$ property-search`
 
-## Features
+**A self-hosted MLS listing search tool with a web dashboard.** Automatically discovers new real estate listings from Redfin, Zillow, and Realtor.com, filters them by your criteria, and tracks them over time. Supports multiple clients, scheduled searches, email notifications, and an interactive map view.
+
+---
+
+## `[ features ]`
 
 - Fetches listings from Redfin, Zillow, and Realtor.com via [HomeHarvest](https://github.com/ZacharyHampton/HomeHarvest)
 - Filters by price, beds, baths, square footage, property type, location radius, age, days on market, and HOA fees
@@ -13,7 +17,9 @@ A self-hosted MLS listing search tool with a web dashboard. Automatically discov
 - Visualizes listings on an interactive map
 - Runs automated background searches on a configurable interval
 
-## Stack
+---
+
+## `[ stack ]`
 
 | Component | Technology |
 |-----------|------------|
@@ -23,31 +29,35 @@ A self-hosted MLS listing search tool with a web dashboard. Automatically discov
 | Mapping | Nominatim geocoding + OpenStreetMap |
 | Deployment | Docker + Docker Compose |
 
-## Quick Start
+---
 
-### Docker (recommended)
+## `[ quick start ]`
+
+### docker (recommended)
 
 ```bash
-git clone https://github.com/jemplayer82/Property-Search.git
-cd Property-Search
-docker compose up -d
+$ git clone https://github.com/jemplayer82/Property-Search.git
+$ cd Property-Search
+$ docker compose up -d
 ```
 
 The dashboard is available at **http://\<your-host\>:5050**.
 
-### Without Docker
+### without docker
 
 ```bash
-git clone https://github.com/jemplayer82/Property-Search.git
-cd Property-Search
-python3 -m venv venv && source venv/bin/activate
-pip install -r requirements.txt
-python app.py
+$ git clone https://github.com/jemplayer82/Property-Search.git
+$ cd Property-Search
+$ python3 -m venv venv && source venv/bin/activate
+$ pip install -r requirements.txt
+$ python app.py
 ```
 
-## Configuration
+---
 
-### Search Filters — `config.json`
+## `[ configuration ]`
+
+### search filters — `config.json`
 
 ```json
 {
@@ -71,7 +81,7 @@ python app.py
 }
 ```
 
-#### Filter Reference
+#### FILTER REFERENCE
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
@@ -86,7 +96,7 @@ python app.py
 | `max_hoa_per_month` | int | Maximum monthly HOA fee (optional) |
 | `max_days_on_market` | int | Maximum days listed (optional) |
 
-### Email Notifications — `notifications.json`
+### email notifications — `notifications.json`
 
 ```json
 {
@@ -101,9 +111,11 @@ python app.py
 
 For Gmail, use an [app-specific password](https://support.google.com/accounts/answer/185833).
 
-## Usage
+---
 
-### Web Dashboard
+## `[ usage ]`
+
+### web dashboard
 
 Open `http://<your-host>:5050` in your browser.
 
@@ -114,21 +126,23 @@ Open `http://<your-host>:5050` in your browser.
 | Settings | Configure search filters and email notifications |
 | Map | Visualize listings on an interactive map |
 
-### Command Line
+### command line
 
 Run a one-off search:
 
 ```bash
-python search.py
+$ python search.py
 ```
 
 The script loads `config.json`, fetches listings, identifies new ones, appends them to `results/listings.csv`, and prints the results.
 
-### Scheduled Searches
+### scheduled searches
 
 The web app runs searches automatically in the background via APScheduler. Configure the schedule from the Settings page or via the REST API.
 
-## Output Files
+---
+
+## `[ output files ]`
 
 | File | Description |
 |------|-------------|
@@ -136,15 +150,21 @@ The web app runs searches automatically in the background via APScheduler. Confi
 | `results/seen_listings.json` | Listing IDs already found — prevents duplicates |
 | `app.log` | Application and task execution logs |
 
-## Useful Commands
+---
+
+## `[ useful commands ]`
 
 ```bash
 # View logs
-docker compose logs -f
+$ docker compose logs -f
 
 # Restart the service
-./restart.sh
+$ ./restart.sh
 
 # Stop
-docker compose down
+$ docker compose down
 ```
+
+---
+
+<img src="assets/fathom-footer-banner.svg" alt="Fathom Works — sound the depths before you set a course" width="100%">
